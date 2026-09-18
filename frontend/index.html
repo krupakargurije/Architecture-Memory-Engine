@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Architecture Memory Engine — Understand any repository through its architecture</title>
+  <meta name="description" content="AME builds persistent architectural memory from any repository. Explore dependency graphs, run impact analysis, and deliver minimum-context to AI coding agents." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
+</head>
+<body class="dark-theme">
+  <div class="app-shell" id="app-shell">
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- MAIN WORKSPACE VIEW (Always active starting with default repo)    -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <section class="workspace-view" id="workspace-view">
+
+      <!-- Header Bar -->
+      <header class="ws-header">
+        <div class="ws-header-left">
+          <button class="ws-logo-btn" id="btn-logo-home" title="Architecture Memory Engine">
+            <span class="logo-badge-sm">AME</span>
+          </button>
+          <div class="ws-repo-info">
+            <div class="repo-badge-row">
+              <span class="repo-tag default" id="header-repo-tag">DEFAULT</span>
+              <span class="ws-repo-name" id="ws-repo-name">ecommerce_java</span>
+            </div>
+            <span class="ws-repo-meta" id="ws-repo-meta">Java · main · c0ffee1 · 44 nodes · 59 edges</span>
+          </div>
+        </div>
+        <div class="ws-header-right">
+          <div class="ws-search-box">
+            <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input type="text" id="graph-search" placeholder="Search architecture (e.g. OrderService, discount)..." />
+          </div>
+          <button class="ws-btn btn-load-external" id="btn-load-external" title="Analyze an external GitHub repository">
+            <span class="btn-icon">⚡</span> Load External Repository
+          </button>
+          <button class="ws-btn btn-switch-repo" id="btn-switch-repo" style="display:none;" title="Analyze another GitHub repository">
+            <span class="btn-icon">⇄</span> Switch Repository
+          </button>
+          <button class="ws-btn btn-return-default" id="btn-return-default" style="display:none;" title="Return to default ecommerce_java repository">
+            <span class="btn-icon">↩</span> Return to Default
+          </button>
+        </div>
+      </header>
+
+      <!-- Main Workspace Grid -->
+      <div class="ws-grid">
+
+        <!-- LEFT SIDEBAR: Controls & Task -->
+        <aside class="ws-sidebar" id="ws-sidebar">
+
+          <!-- Active Repository Card -->
+          <div class="sidebar-section repo-info-card" id="repo-info-card">
+            <div class="repo-card-header">
+              <span class="repo-card-tag default" id="sidebar-repo-tag">DEFAULT REPOSITORY</span>
+              <span class="repo-card-type" id="sidebar-repo-type">Sample</span>
+            </div>
+            <div class="sidebar-repo-title" id="sidebar-repo-title">ecommerce_java</div>
+            <div class="sidebar-repo-details" id="sidebar-repo-details">
+              <div class="detail-line"><span class="lbl">Language:</span> <span class="val" id="sidebar-lang">Java</span></div>
+              <div class="detail-line"><span class="lbl">Branch:</span> <span class="val" id="sidebar-branch">main</span></div>
+              <div class="detail-line"><span class="lbl">Snapshot:</span> <span class="val mono" id="sidebar-snapshot">—</span></div>
+              <div class="detail-line"><span class="lbl">Architecture:</span> <span class="val" id="sidebar-stats">44 Nodes · 59 Edges</span></div>
+            </div>
+            <div class="sidebar-card-actions">
+              <button class="sidebar-action-btn primary" id="btn-sidebar-load-ext">
+                <span class="btn-icon">⚡</span> Load External Repository
+              </button>
+              <button class="sidebar-action-btn secondary" id="btn-sidebar-return-default" style="display:none;">
+                <span class="btn-icon">↩</span> Return to Default
+              </button>
+            </div>
+          </div>
+
+          <!-- Dynamic Task Context Retrieval -->
+          <div class="sidebar-section task-section" id="task-section">
+            <div class="task-section-header">
+              <h4 class="section-label">Task Context Retrieval</h4>
+              <span class="task-repo-badge" id="task-repo-badge" title="Active Repository">ecommerce_java</span>
+            </div>
+            <p class="section-desc">Ask AME about any coding task in the current repository.</p>
+
+            <div class="task-input-wrapper">
+              <textarea id="task-input" rows="3" placeholder="e.g. Add Redis caching to the product pricing service"></textarea>
+            </div>
+
+            <div class="budget-row">
+              <div class="budget-label-group">
+                <label for="budget-slider">Token Budget</label>
+                <strong id="budget-value">8,000</strong>
+              </div>
+              <input type="range" id="budget-slider" min="1000" max="16000" step="500" value="8000" />
+            </div>
+
+            <button class="btn-retrieve" id="btn-retrieve">
+              <span class="btn-icon">🔍</span> Retrieve Context
+            </button>
+
+            <!-- Example Suggestions (Clicking populates input for user editing) -->
+            <div class="example-tasks-container">
+              <span class="examples-label">Example Tasks:</span>
+              <div class="example-chips" id="example-chips">
+                <button type="button" class="example-chip" data-task="Introduce a discount validation step before creating an order">Discount Validation</button>
+                <button type="button" class="example-chip" data-task="Add Redis caching to product pricing service">Pricing Cache</button>
+                <button type="button" class="example-chip" data-task="What will be affected if I change OrderService?">OrderService Impact</button>
+                <button type="button" class="example-chip" data-task="Which tests cover the order creation flow?">Order Creation Tests</button>
+              </div>
+            </div>
+
+            <!-- Staged Analysis Progress State -->
+            <div class="task-analysis-panel" id="task-analysis-panel" style="display:none;">
+              <div class="analysis-status-header">
+                <span class="analysis-spinner"></span>
+                <span class="analysis-status-text">Analyzing task...</span>
+              </div>
+              <div class="analysis-stages" id="analysis-stages">
+                <div class="task-stage-row" id="tstage-understand"><span class="tstage-icon">○</span> <span>Understanding task</span></div>
+                <div class="task-stage-row" id="tstage-candidates"><span class="tstage-icon">○</span> <span>Finding candidate components</span></div>
+                <div class="task-stage-row" id="tstage-traverse"><span class="tstage-icon">○</span> <span>Traversing architecture</span></div>
+                <div class="task-stage-row" id="tstage-impact"><span class="tstage-icon">○</span> <span>Computing impact</span></div>
+                <div class="task-stage-row" id="tstage-code"><span class="tstage-icon">○</span> <span>Selecting relevant code</span></div>
+                <div class="task-stage-row" id="tstage-optimize"><span class="tstage-icon">○</span> <span>Optimizing context</span></div>
+              </div>
+            </div>
+
+            <!-- Recent Task History (Scoped to active repo) -->
+            <div class="retrieval-history-section" id="retrieval-history-section" style="display:none;">
+              <div class="history-header">
+                <span class="history-label">Recent Tasks</span>
+                <button class="btn-clear-history" id="btn-clear-history" title="Clear task history">Clear</button>
+              </div>
+              <div class="history-list" id="history-list"></div>
+            </div>
+          </div>
+
+          <!-- Filters -->
+          <div class="sidebar-section" id="filter-section">
+            <h4 class="section-label">Filter Nodes</h4>
+            <div class="filter-checks" id="filter-checks"></div>
+          </div>
+
+          <!-- Architecture Summary -->
+          <div class="sidebar-section" id="summary-section">
+            <h4 class="section-label">Architecture Summary</h4>
+            <div class="summary-content" id="summary-content">
+              <p class="muted-text">Loading architectural summary...</p>
+            </div>
+          </div>
+
+          <!-- Primary Flows -->
+          <div class="sidebar-section" id="chains-section">
+            <h4 class="section-label">Primary Flows</h4>
+            <div class="chains-content" id="chains-content"></div>
+          </div>
+
+          <!-- Structure & Health -->
+          <div class="sidebar-section" id="health-section">
+            <h4 class="section-label">Structure</h4>
+            <div class="health-content" id="health-content"></div>
+          </div>
+
+        </aside>
+
+        <!-- CENTER: Graph Canvas -->
+        <div class="ws-center">
+          <div class="graph-toolbar">
+            <div class="toolbar-left">
+              <span class="graph-badge" id="graph-badge">ECOMMERCE_JAVA</span>
+              <span class="graph-count" id="graph-count">44 nodes · 59 edges</span>
+            </div>
+            <div class="toolbar-right">
+              <button class="tool-btn" id="btn-zoom-in" title="Zoom In">+</button>
+              <button class="tool-btn" id="btn-zoom-out" title="Zoom Out">−</button>
+              <button class="tool-btn" id="btn-fit" title="Fit Graph">⊡</button>
+              <button class="tool-btn" id="btn-center" title="Center Selection">◎</button>
+              <button class="tool-btn" id="btn-pause" title="Pause/Resume Edge Animation">▮▮</button>
+              <select class="layout-select" id="layout-select">
+                <option value="cose">Force-directed</option>
+                <option value="breadthfirst">Hierarchical</option>
+                <option value="circle">Circular</option>
+                <option value="concentric">Concentric</option>
+                <option value="grid">Grid</option>
+              </select>
+            </div>
+          </div>
+          <div class="graph-legend" id="graph-legend"></div>
+          <div id="cy-container" class="cy-canvas"></div>
+          <!-- Edge/Node hover tooltip -->
+          <div class="graph-tooltip" id="graph-tooltip" style="display:none;"></div>
+        </div>
+
+        <!-- RIGHT: Inspector Panel -->
+        <aside class="ws-inspector" id="ws-inspector">
+
+          <!-- Retrieved Context Summary Banner (shown after task query) -->
+          <div class="context-banner" id="context-banner" style="display:none;">
+            <div class="banner-top">
+              <span class="intent-pill" id="banner-intent">IMPLEMENTATION</span>
+              <span class="banner-tokens" id="banner-tokens">0 / 8,000 tokens</span>
+            </div>
+            <div class="banner-task" id="banner-task">"..."</div>
+            <div class="banner-stats" id="banner-stats">
+              <span><strong id="bstat-nodes">0</strong> nodes</span>
+              <span>·</span>
+              <span><strong id="bstat-edges">0</strong> edges</span>
+              <span>·</span>
+              <span><strong id="bstat-files">0</strong> files</span>
+              <span>·</span>
+              <span class="bstat-savings" id="bstat-savings">— reduction</span>
+            </div>
+            <div class="banner-actions">
+              <button class="banner-btn" id="btn-copy-context" title="Copy prompt-ready architectural markdown">📋 Copy Context</button>
+              <button class="banner-btn" id="btn-view-json" title="View raw ContextPackage JSON">👁️ View JSON</button>
+              <button class="banner-btn primary" id="btn-send-agent" title="Send to AI Agent via MCP / REST">🚀 Send to Agent</button>
+            </div>
+          </div>
+
+          <!-- Inspector Tabs -->
+          <div class="inspector-tabs">
+            <button class="insp-tab active" data-tab="tab-architecture">Architecture</button>
+            <button class="insp-tab" data-tab="tab-source">Source</button>
+            <button class="insp-tab" data-tab="tab-impact">Impact</button>
+            <button class="insp-tab" data-tab="tab-provenance">Provenance</button>
+            <button class="insp-tab" data-tab="tab-node">Node</button>
+            <button class="insp-tab" data-tab="tab-benchmark">Benchmark</button>
+          </div>
+
+          <!-- Tab: Architecture (Retrieved Subgraph, Relationship Chains, Why Included) -->
+          <div class="tab-pane active" id="tab-architecture">
+            <div class="architecture-tab-content">
+              <!-- Relationship Chain Path -->
+              <div class="arch-section">
+                <h5 class="arch-sublabel">Architectural Dependency Chain</h5>
+                <div class="chains-flow-container" id="arch-chains-flow">
+                  <div class="empty-state"><p>Run any coding task query to see its architectural dependency chain.</p></div>
+                </div>
+              </div>
+
+              <!-- Retrieved Components & "Why Included?" -->
+              <div class="arch-section">
+                <h5 class="arch-sublabel">Retrieved Components &amp; Rationale</h5>
+                <div class="components-rationale-list" id="components-rationale-list">
+                  <div class="empty-state"><p>Components and inclusion rationale appear after context retrieval.</p></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab: Source (Targeted Code Spans & Signatures) -->
+          <div class="tab-pane" id="tab-source">
+            <div id="snippets-list">
+              <div class="empty-state"><p>Run a task query to view minimum retrieved source code snippets.</p></div>
+            </div>
+          </div>
+
+          <!-- Tab: Impact (Change Impact Blast Radius) -->
+          <div class="tab-pane" id="tab-impact">
+            <div class="impact-tab-content" id="impact-tab-content">
+              <div class="impact-overview-card">
+                <div class="impact-card-header">
+                  <span class="arch-sublabel">Change Blast Radius</span>
+                  <span class="risk-badge" id="risk-badge-full">LOW</span>
+                </div>
+                <div class="impact-stats-grid" id="impact-stats-grid">
+                  <div class="istat-cell"><span class="istat-num" id="istat-callers">0</span><span class="istat-label">Upstream Callers</span></div>
+                  <div class="istat-cell"><span class="istat-num" id="istat-downstream">0</span><span class="istat-label">Downstream Deps</span></div>
+                  <div class="istat-cell"><span class="istat-num" id="istat-tests">0</span><span class="istat-label">Affected Tests</span></div>
+                  <div class="istat-cell"><span class="istat-num" id="istat-apis">0</span><span class="istat-label">Exposed APIs</span></div>
+                </div>
+              </div>
+
+              <div class="impact-lists-container" id="impact-lists-container">
+                <div class="empty-state"><p>Change impact analysis appears after context retrieval.</p></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab: Provenance (Verification & Tracking) -->
+          <div class="tab-pane" id="tab-provenance">
+            <div id="provenance-list">
+              <div class="empty-state"><p>Provenance trail appears after context retrieval.</p></div>
+            </div>
+          </div>
+
+          <!-- Tab: Node Inspector (Single Component Click) -->
+          <div class="tab-pane" id="tab-node">
+            <div class="node-inspector" id="node-inspector">
+              <div class="empty-state">
+                <p>Click any node in the graph to inspect its architectural details, calls, callers, tests, and provenance.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab: Benchmark -->
+          <div class="tab-pane" id="tab-benchmark">
+            <div class="benchmark-view">
+              <h4>Benchmark: Task Success @ 8,000 Token Budget</h4>
+              <div id="benchmark-table-view">
+                <table class="bench-table">
+                  <thead>
+                    <tr><th>Approach</th><th>Tokens</th><th>Precision</th><th>Dep Recall</th><th>Success</th></tr>
+                  </thead>
+                  <tbody id="benchmark-tbody">
+                    <tr><td><strong>Full Context</strong></td><td>2,403</td><td>61.0%</td><td>100.0%</td><td><span class="pill good">0.923</span></td></tr>
+                    <tr><td><strong>Vector RAG</strong></td><td>896</td><td>100.0%</td><td>43.0%</td><td><span class="pill poor">0.657</span></td></tr>
+                    <tr class="hl-row"><td><strong>AME Architectural</strong></td><td>2,175</td><td>100.0%</td><td>100.0%</td><td><span class="pill stellar">1.000</span></td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <p class="bench-insight">💡 <strong>Insight:</strong> Vector RAG misses 57% of the critical dependency chain. Full Context adds 39% irrelevant noise. AME delivers 100% precision and complete dependency awareness within budget.</p>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- LOAD EXTERNAL REPOSITORY MODAL                                     -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <div class="modal-backdrop" id="external-repo-modal" style="display:none;">
+      <div class="modal-dialog">
+
+        <!-- Modal Header -->
+        <div class="modal-header">
+          <div class="modal-title-group">
+            <div class="modal-badge">AME INGESTION</div>
+            <h3 class="modal-title" id="modal-title">Load External Repository</h3>
+            <p class="modal-subtitle">Understand any GitHub repository through its architecture</p>
+          </div>
+          <button class="modal-close-btn" id="btn-modal-close" title="Close">✕</button>
+        </div>
+
+        <!-- State 1: Input Form View -->
+        <div class="modal-body" id="modal-form-view">
+          <div class="url-input-wrapper">
+            <span class="url-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
+            </span>
+            <input type="text" id="modal-github-url" placeholder="https://github.com/owner/repository" autocomplete="off" spellcheck="false" />
+          </div>
+          <div class="hero-options">
+            <div class="option-field">
+              <label for="modal-branch-input">Branch (optional)</label>
+              <input type="text" id="modal-branch-input" placeholder="main" />
+            </div>
+            <div class="option-field">
+              <label for="modal-token-input">Access Token <span class="opt-label">(private repos)</span></label>
+              <input type="password" id="modal-token-input" placeholder="ghp_..." autocomplete="off" />
+            </div>
+          </div>
+          <div class="modal-callout">
+            <span class="callout-icon">ℹ</span>
+            <span>The current graph will be replaced after analysis. AME temporarily acquires the repository, extracts its architectural graph, and permanently deletes the temporary workspace copy.</span>
+          </div>
+          <div class="modal-actions">
+            <button class="btn-analyze" id="btn-modal-analyze">
+              <span class="btn-icon">⬡</span> Analyze Repository
+            </button>
+            <button class="btn-cancel" id="btn-modal-cancel">Cancel</button>
+          </div>
+        </div>
+
+        <!-- State 2: Live Progress Pipeline View -->
+        <div class="modal-body" id="modal-progress-view" style="display:none;">
+          <div class="progress-panel" id="modal-progress-panel">
+            <div class="progress-stages" id="modal-progress-stages"></div>
+            <div class="progress-stats" id="modal-progress-stats"></div>
+            <div class="workspace-status" id="modal-workspace-status"></div>
+          </div>
+        </div>
+
+        <!-- State 3: Failure / Error View (Existing repo remains intact!) -->
+        <div class="modal-body" id="modal-error-view" style="display:none;">
+          <div class="modal-error-box">
+            <div class="error-icon">⚠️</div>
+            <h4 class="error-title">External repository analysis failed</h4>
+            <div class="error-detail" id="modal-error-detail"></div>
+            <p class="error-note">The currently loaded repository (<strong id="error-fallback-repo">ecommerce_java</strong>) remains active and intact.</p>
+            <div class="modal-actions">
+              <button class="btn-analyze" id="btn-modal-try-again">
+                <span class="btn-icon">↺</span> Try Again
+              </button>
+              <button class="btn-cancel" id="btn-modal-return-curr">
+                <span class="btn-icon">↩</span> Return to Current Repository
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- CONTEXTPACKAGE JSON VIEWER MODAL (For MCP / Agent inspection)      -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <div class="modal-backdrop" id="context-json-modal" style="display:none;">
+      <div class="modal-dialog json-dialog">
+        <div class="modal-header">
+          <div class="modal-title-group">
+            <div class="modal-badge">MCP / REST PAYLOAD</div>
+            <h3 class="modal-title">ContextPackage Schema</h3>
+            <p class="modal-subtitle">Structured architectural context delivered directly to AI coding agents.</p>
+          </div>
+          <button class="modal-close-btn" id="btn-json-modal-close" title="Close">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="json-viewer-container">
+            <pre class="json-code" id="json-modal-content"><code></code></pre>
+          </div>
+          <div class="modal-actions">
+            <button class="btn-analyze" id="btn-copy-raw-json">
+              <span class="btn-icon">📋</span> Copy JSON Payload
+            </button>
+            <button class="btn-cancel" id="btn-json-modal-dismiss">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Floating Toast Notification -->
+    <div class="ame-toast" id="ame-toast" style="display:none;"></div>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
